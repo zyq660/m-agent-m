@@ -41,24 +41,22 @@ logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("httpcore").setLevel(logging.CRITICAL)
 
-from . import retrieve
-from . import face_processing
-from . import memory_processing
-try:
-    if model == "qwen2.5-omni":
-        from . import memory_processing_qwen
-except:
-    pass
-from . import prompts
-from . import videograph
-from . import voice_processing
-from . import utils
+import importlib
+
+
+def __getattr__(name):
+    # Text retrieval must not initialize video/audio models or download their weights.
+    if name in __all__:
+        module = importlib.import_module(f"{__name__}.{name}")
+        globals()[name] = module
+        return module
+    raise AttributeError(name)
 
 __all__ = [
     "retrieve",
     "face_processing",
     "memory_processing",
-    "memory_processing_qwen" if model == "qwen2.5-omni" else None,
+    "memory_processing_qwen",
     "prompts",
     "videograph",
     "voice_processing",

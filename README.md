@@ -205,3 +205,103 @@ Please cite us as:
       primaryClass={cs.CV}
 }
 ```
+
+
+
+
+
+
+
+
+
+
+
+• 之前跑的是 robot 全部 1276 道题的本地问答 → 保存检索记录 → 本地模型评分 → TensorBoard 展示。直接读取已经生成、重新编码后的记忆图，没有重新处理视频或训练模型。
+
+  入口是 run_full_local_qa.py，当时按下面的配置启动。
+
+  1. 进入项目目录，启动本地模型服务
+
+  使用环境内 Python 的完整路径，不需要先 conda activate。
+
+  cd /sda/home/immc_temp_zhaoyuqi/MLLMAM
+
+  # 查询嵌入模型：Qwen3-Embedding-8B，GPU 7
+  .conda/envs/m3-agent/bin/python manage_local_embeddings.py start \
+    --gpus 7 --port 8732
+
+  # Control：GPU 5、6，双卡并行
+  .conda/envs/m3-agent/bin/python manage_local_control.py start \
+    --gpu 5,6 \
+    --port 8735 \
+    --tensor-parallel-size 2 \
+    --max-num-seqs 8 \
+    --max-model-len 40960
+
+  # 本地评分模型：GPU 2
+  .conda/envs/m3-agent/bin/python manage_local_judge.py start --gpu 2
+
+  这些是之前使用的 GPU 编号。如果你重新运行，可以根据空闲情况替换。
+
+  查看服务状态，等待模型加载完成：
+
+  .conda/envs/m3-agent/bin/python manage_local_embeddings.py status
+  .conda/envs/m3-agent/bin/python manage_local_control.py status --port 8735
+  .conda/envs/m3-agent/bin/python manage_local_judge.py status
+
+  2. 启动 robot 问答和检索
+
+  最近一次实验对应的启动参数是：
+
+  .conda/envs/m3-agent/bin/python run_full_local_qa.py start \
+    --subset robot \
+    --workers 8 \
+    --endpoint http://127.0.0.1:8735 \
+    --run-dir m3-agent/data/results/robot-mmr-repeat-20260911-201518
+
+  这个目录已经完成，执行上述指令不会重新跑。 如果你修改代码后要做新实验，换一个新的结果目录，例如：
+
+  .conda/envs/m3-agent/bin/python run_full_local_qa.py start \
+    --subset robot \
+    --workers 8 \
+    --endpoint http://127.0.0.1:8735 \
+    --run-dir m3-agent/data/results/robot-test-20260914-01
+
+  脚本会后台运行，保存启动时的代码和配置快照。每题最多 5 轮，每轮最多生成 1024 tokens；temperature=0.6、top_p=0.95、top_k=20、seed=42。
+
+  它调用的是当前项目中的 control.py 和 retrieve.py。运行期间不要修改这些文件，否则代码一致性检查会报错。
+
+  3. 启动评分和 TensorBoard
+
+  新实验创建后执行：
+
+  .conda/envs/m3-agent/bin/python manage_scoring_dashboard.py start
+
+  这个脚本会读取“最近创建的实验”目录，自动评分陆续生成的答案，并更新 TensorBoard，服务端口为 6008。评分使用本地 Qwen3-32B，不调用 GPT-4o。
+
+  4. 查看进度和结果
+
+  .conda/envs/m3-agent/bin/python run_full_local_qa.py status \
+    --run-dir m3-agent/data/results/robot-test-20260914-01
+
+  .conda/envs/m3-agent/bin/python manage_scoring_dashboard.py status
+
+  新实验结果都在指定的 --run-dir 下：
+
+   文件                              内容
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   robot.answers.jsonl               问题、参考答案、模型答案
+  ────────────────────────────────  ──────────────────────────────────────
+   robot.traces.jsonl                每轮查询、返回的记忆、片段分数和对话
+  ────────────────────────────────  ──────────────────────────────────────
+   progress.json                     问答进度
+  ────────────────────────────────  ──────────────────────────────────────
+   local_judge/robot.scores.jsonl    逐题评分
+  ────────────────────────────────  ──────────────────────────────────────
+   local_judge/summary.json          总准确率和分题型结果
+  ────────────────────────────────  ──────────────────────────────────────
+   source_snapshot/                  本次代码和配置快照
+  ────────────────────────────────  ──────────────────────────────────────
+   manifest.json                     题目清单、生成参数和模型配置
+
+  之前最近一次实验的说明保存在 m3-agent/data/results/robot-mmr-repeat-20260911-201518/README.md。

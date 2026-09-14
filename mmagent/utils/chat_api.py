@@ -115,7 +115,7 @@ def parallel_get_response(model, messages, timeout=30):
     return responses, total_tokens
 
 
-def get_embedding(model, text, timeout=15):
+def get_embedding(model, text, timeout=15, input_type="document"):
     """Get embedding for text using specified model.
 
     Args:
@@ -125,11 +125,15 @@ def get_embedding(model, text, timeout=15):
     Returns:
         tuple: (embedding vector, total tokens used)
     """
+    from ..local_embedding import is_local, encode
+    if is_local():
+        vectors, tokens = encode([text], input_type=input_type)
+        return vectors[0], tokens
     response = client[model].embeddings.create(input=text, model=model, timeout=timeout)
     return response.data[0].embedding, response.usage.total_tokens
 
 
-def get_embedding_with_retry(model, text, timeout=15):
+def get_embedding_with_retry(model, text, timeout=15, input_type="document"):
     """Retry get_embedding up to MAX_RETRIES times with error handling.
 
     Args:
@@ -142,16 +146,19 @@ def get_embedding_with_retry(model, text, timeout=15):
     Raises:
         Exception: If all retries fail
     """
+    from ..local_embedding import is_local
+    if is_local():
+        return get_embedding(model, text, timeout, input_type=input_type)
     for i in range(MAX_RETRIES):
         try:
-            return get_embedding(model, text, timeout)
+            return get_embedding(model, text, timeout, input_type=input_type)
         except Exception as e:
             sleep(20)
             logger.warning(f"Retry {i} times, exception: {e} from get embedding")
             continue
     raise Exception(f"Failed to get embedding after {MAX_RETRIES} retries")
 
-def parallel_get_embedding(model, texts, timeout=15):
+def parallel_get_embedding(model, texts, timeout=15, input_type="document"):
     """Process multiple texts in parallel to get embeddings.
 
     Args:
@@ -161,6 +168,9 @@ def parallel_get_embedding(model, texts, timeout=15):
     Returns:
         tuple: (list of embeddings, total tokens used)
     """
+    from ..local_embedding import is_local, encode
+    if is_local():
+        return encode(texts, input_type=input_type)
     batch_size = config[model]["qpm"]
     embeddings = []
     total_tokens = 0
@@ -171,7 +181,7 @@ def parallel_get_embedding(model, texts, timeout=15):
         max_workers = len(batch)
         
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            results = list(executor.map(lambda x: get_embedding_with_retry(model, x, timeout), batch))
+            results = list(executor.map(lambda x: get_embedding_with_retry(model, x, timeout, input_type=input_type), batch))
             
         # Split batch results into embeddings and tokens
         batch_embeddings = [result[0] for result in results]

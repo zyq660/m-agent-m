@@ -200,6 +200,8 @@ def generate_full_memories(video_context):
     return episodic_memories, semantic_memories
 
 def process_memories(video_graph, memory_contents, clip_id, type='episodic'):
+    from .local_embedding import prepare_graph_for_text_updates
+    prepare_graph_for_text_updates(video_graph)
     def get_memory_embeddings(memory_contents):
         # calculate the embedding for each memory
         model = 'text-embedding'
@@ -271,4 +273,3 @@ def process_memories(video_graph, memory_contents, clip_id, type='episodic'):
         })
 
     update_video_graph(video_graph, memories, type)
-    
