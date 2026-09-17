@@ -22,7 +22,7 @@ from pathlib import Path
 from urllib.request import Request, build_opener, ProxyHandler
 from urllib.parse import urlparse
 import mmagent.videograph
-from mmagent.retrieve import search
+from mmagent.retrieve import search, search_routed
 from mmagent.local_embedding import is_local, retrieval_threshold
 from transformers import AutoTokenizer
 from mmagent.utils.general import load_video_graph
@@ -30,7 +30,7 @@ from mmagent.utils.chat_api import generate_messages
 from mmagent.prompts import prompt_agent_verify_answer_referencing
 
 sys.modules["videograph"] = mmagent.videograph
-processing_config = json.load(open("configs/processing_config.json"))
+processing_config = json.loads((Path(__file__).resolve().parents[1] / 'configs/processing_config.json').read_text())
 model_name = "models/M3-Agent-Control"
 gpt_model = "gpt-4o-2024-11-20"
 client = None
@@ -97,12 +97,12 @@ If the answer can be derived from the provided knowledge, the {{content}} is the
 
 pattern = r"Action:\s*\[(Answer|Search)\]\s*Content:\s*(.*)"
 
-def local_generate(endpoint, prompts, max_tokens, temperature):
+def local_generate(endpoint, prompts, max_tokens, temperature, seed=42):
     if urlparse(endpoint).hostname not in ("127.0.0.1", "localhost", "::1"):
         raise ValueError("Control endpoint must be local; external API fallback is disabled")
     payload = {"model": "M3-Agent-Control", "prompt": prompts,
                "max_tokens": max_tokens, "temperature": temperature,
-               "top_p": 0.95, "top_k": 20, "seed": 42}
+               "top_p": 0.95, "top_k": 20, "seed": seed}
     request = Request(endpoint.rstrip("/") + "/v1/completions",
                       data=json.dumps(payload).encode(),
                       headers={"Content-Type": "application/json"})
@@ -113,7 +113,7 @@ def local_generate(endpoint, prompts, max_tokens, temperature):
         raise RuntimeError("Control returned an unexpected number of completions")
     return [item["text"] for item in choices]
 
-def consumer(data):
+def consumer(data, router_config=None, router_tokenizer=None):
     if not data["finish"]:
         started = time.monotonic()
         before_clip = data.get("before_clip", None)
@@ -139,7 +139,23 @@ def consumer(data):
                 if before_clip is not None:
                     mem_node.truncate_memory_by_clip(before_clip, False)
                 mem_node.refresh_equivalences()
-                if "character id" in content:
+                from mmagent.memory_router import choose, load_config
+                config = router_config if router_config is not None else load_config()
+                decision = choose(data, content, config)
+                if decision['action'] is not None:
+                    if router_tokenizer is None:
+                        router_tokenizer = _router_tokenizer()
+                    memories, seen_nodes, scores, details = search_routed(
+                        mem_node, content, decision['action'], data.get('router_seen_nodes', []),
+                        config, lambda text: len(router_tokenizer.encode(text, add_special_tokens=False)),
+                        before_clip=before_clip, threshold=retrieval_threshold())
+                    data['router_seen_nodes'] = seen_nodes
+                    delivered_clips = [int(k.split('_')[1]) for k in memories]
+                    data['currenr_clips'] = list(dict.fromkeys(data['currenr_clips'] + delivered_clips))
+                    decision.update(details)
+                    trace.update(search_mode='router', router=decision, threshold=retrieval_threshold())
+                    new_memories.update(memories)
+                elif "character id" in content:
                     memories, _, scores = search(mem_node, content, [], mem_wise=True, topk=20, before_clip=before_clip)
                     trace.update(search_mode="node", topk=20, threshold=0)
                     new_memories.update(memories)
@@ -148,6 +164,7 @@ def consumer(data):
                     trace.update(search_mode="clip", topk=processing_config["topk"], threshold=retrieval_threshold())
                     data["currenr_clips"] = currenr_clips
                     new_memories.update(memories)
+                trace.setdefault('router', decision)
                 trace["clip_scores"] = {str(key): float(value) for key, value in scores.items()}
             trace["memories"] = new_memories
             search_result = "Searched knowledge: " + json.dumps(new_memories, ensure_ascii=False).encode("utf-8", "ignore").decode("utf-8")
@@ -157,6 +174,14 @@ def consumer(data):
         trace["retrieval_seconds"] = round(time.monotonic() - started, 4)
         data.setdefault("retrieval_trace", []).append(trace)
     return data
+
+
+from functools import lru_cache
+
+@lru_cache(maxsize=1)
+def _router_tokenizer():
+    return AutoTokenizer.from_pretrained(Path(__file__).resolve().parents[1] / model_name,
+                                        local_files_only=True)
 
 
 if __name__ == "__main__":

@@ -14,9 +14,10 @@
 import logging
 import json
 import os
+from pathlib import Path
 
 # Load processing config
-processing_config = json.load(open("configs/processing_config.json"))
+processing_config = json.loads((Path(__file__).resolve().parents[1] / "configs/processing_config.json").read_text())
 logging_level = processing_config["logging"]
 model = processing_config["model"]
 

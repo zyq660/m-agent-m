@@ -755,6 +755,18 @@ def generate_action(
 # Memory materialization and retrieval confidence
 # ---------------------------------------------------------------------------
 
+def search_routed(video_graph, query, action, seen_nodes, config, token_count,
+                  before_clip=None, threshold=0.45):
+    """Executable router policies; legacy search() stays reproducible.
+
+    Returns memories, updated node history, clip scores, and routing details.
+    The caller supplies the Control tokenizer for a shared, actual token cap.
+    """
+    from .routed_retrieval import search_strategy
+    return search_strategy(video_graph, query, action, seen_nodes, config, token_count,
+                           before_clip=before_clip, threshold=threshold)
+
+
 def _ordered_nodes_for_route(video_graph, node_ids: Sequence[int], route: str) -> List[int]:
     """Prefer semantic or episodic nodes according to the inferred query route."""
     if route not in {"semantic", "temporal", "visual", "audio", "multimodal"}:

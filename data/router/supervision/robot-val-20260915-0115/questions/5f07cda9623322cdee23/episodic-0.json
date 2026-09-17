@@ -1,0 +1,176 @@
+{
+  "action": "episodic",
+  "continuation_prompt_tokens": 1204,
+  "conversations": [
+    {
+      "content": "You are given a question and some relevant knowledge. Your task is to reason about whether the provided knowledge is sufficient to answer the question. If it is sufficient, output [Answer] followed by the answer. If it is not sufficient, output [Search] and generate a query that will be encoded into embeddings for a vector similarity search. The query will help retrieve additional information from a memory bank.\n\nQuestion: What is burnt?",
+      "role": "system"
+    },
+    {
+      "content": "Searched knowledge: {}\n\nOutput the answer in the format:\nAction: [Answer] or [Search]\nContent: {content}\n\nIf the answer cannot be derived yet, the {content} should be a single search query that would help retrieve the missing information. The search {content} needs to be different from the previous.\nYou can get the mapping relationship between character ID and name by using search query such as: \"What is the name of <character_{i}>\" or \"What is the character id of {name}\".\nAfter obtaining the mapping, it is best to use character ID instead of name for searching.\nIf the answer can be derived from the provided knowledge, the {content} is the specific answer to the question. Only name can appear in the answer, not character ID like <character_{i}>.",
+      "role": "user"
+    },
+    {
+      "content": "<think>\nOkay, let's see. The user asked \"What is burnt?\" and the searched knowledge is empty. So there's no information provided here. The question is pretty vague. \"Burnt\" could refer to something that's burned, like an object, a place, or maybe even a character in a story. But without any context or additional details, it's impossible to know what exactly is being referred to.\n\nThe instructions say that if the knowledge isn't sufficient, I should output [Search] and a query. Since there's no knowledge here, I need to generate a search query that can find more information. The previous search was empty, so the new query should be different. Maybe something like \"What is the meaning of burnt in the context of...\" but that's too broad. Alternatively, maybe ask for examples of things that can be burnt. Wait, the user might be referring to a specific scenario, like in a book or a movie. But without knowing that, it's hard. The safest bet is to search for a general explanation of what \"burnt\" refers to. So the query could be \"What does 'burnt' refer to in different contexts?\" or maybe \"Examples of things that are burnt.\" Let me go with the first one.\n</think>\n\nAction: [Search]\nContent: What does 'burnt' refer to in different contexts?",
+      "role": "assistant"
+    },
+    {
+      "content": "Searched knowledge: {\"CLIP_20\": [\"<character_0> asks <character_0> if they are making charcoal grilled eggs.\", \"<character_0> replies that it is burned.\", \"<character_0> tells <character_0> to throw it away and make a new one.\", \"<character_0> checks the stove and says it is off already.\", \"<character_0> flips something in a pan on the stove.\", \"<character_0> says they don't know what happened.\", \"<character_0> says it is troublesome.\", \"<character_0> asks <character_0> for help with the stove.\", \"<character_0> wears a black and white striped sweater and light blue jeans.\", \"<character_0> stands by the stove, while <character_0> begins by the shelves.\", \"<character_0> and <character_0> are in a kitchen with light wood cabinets and stainless steel appliances.\", \"<character_0> wears a dark green sweater and cream-colored pants.\", \"<character_0> takes a photo of the food with their phone.\", \"<character_0> continues to look at their phone.\", \"<character_0> agrees and starts to clean up.\", \"<character_0> offers to help.\"], \"CLIP_19\": [\"This person walks towards the counter with a plate of food.\", \"<character_4> asks, 'What got burned?'\", \"The person in the striped sweater replies, 'Oh, no, my eggs. Oh.'\", \"<character_4> stands by the sink, looking out the window and holding a smartphone.\", \"A frying pan with an egg sits on the stovetop.\", \"Another person enters the kitchen, wearing a black and white striped sweater and light blue jeans.\", \"<character_4> says, 'Oh, no, my eggs. Oh.'\", \"<character_4> moves closer to the stovetop.\", \"The person in the striped sweater opens a cabinet near the refrigerator.\", \"The video begins in a kitchen with light wood cabinets and stainless steel appliances.\", \"Large windows offer a view of other high-rise buildings and a body of water.\", \"The person in the striped sweater takes something out of the refrigerator.\", \"The person in the striped sweater closes the refrigerator door.\", \"<character_4> is wearing a dark green, knit sweater and light beige pants.\"]}\n\nOutput the answer in the format:\nAction: [Answer] or [Search]\nContent: {content}\n\nIf the answer cannot be derived yet, the {content} should be a single search query that would help retrieve the missing information. The search {content} needs to be different from the previous.\nYou can get the mapping relationship between character ID and name by using search query such as: \"What is the name of <character_{i}>\" or \"What is the character id of {name}\".\nAfter obtaining the mapping, it is best to use character ID instead of name for searching.\nIf the answer can be derived from the provided knowledge, the {content} is the specific answer to the question. Only name can appear in the answer, not character ID like <character_{i}>.",
+      "role": "user"
+    },
+    {
+      "content": "<think>\nOkay, let's see. The user asked \"What is burnt?\" and there's some knowledge provided from CLIP_19 and CLIP_20.\n\nLooking at CLIP_19, there's a part where <character_4> asks, \"What got burned?\" and the person in the striped sweater replies, \"Oh, no, my eggs. Oh.\" So that directly mentions eggs being burned. Also, in CLIP_20, there's a mention of \"charcoal grilled eggs\" and someone says it's burned. So combining these two clips, it seems like the eggs are what got burnt. The answer should be \"eggs.\" The characters are referred by IDs, but the answer should use the name. However, since the knowledge doesn't provide the names of the characters, but the answer is clear from the dialogue, I can directly answer \"eggs\" without needing to map the character IDs. The user's question is answered by the content in the clips. So the action should be Answer with content \"eggs.\"\n</think>\n\nAction: [Answer]\nContent: The eggs are burnt.",
+      "role": "assistant"
+    }
+  ],
+  "elapsed_seconds": 29.36598587781191,
+  "judgment": {
+    "correct": true,
+    "raw_judgment": "```json\n{\"correct\": true, \"reason\": \"The candidate answer 'The eggs are burnt.' is semantically consistent with the reference answer 'Egg.' and provides a complete, equivalent response to the question.\"}\n```",
+    "reason": "The candidate answer 'The eggs are burnt.' is semantically consistent with the reference answer 'Egg.' and provides a complete, equivalent response to the question.",
+    "source": "Qwen3-32B-Judge",
+    "usage": {
+      "completion_tokens": 47,
+      "prompt_tokens": 209,
+      "prompt_tokens_details": null,
+      "total_tokens": 256
+    }
+  },
+  "memory_tokens": 484,
+  "response": "The eggs are burnt.",
+  "retrieval_trace": [
+    {
+      "action": "Search",
+      "before_clip": 24,
+      "clip_scores": {
+        "0": 0.2966485275162654,
+        "1": 0.2429862118462407,
+        "10": 0.3267202189859132,
+        "11": 0.20313485722856825,
+        "12": 0.24796158415508807,
+        "13": 0.3152475026480583,
+        "14": 0.351017170008153,
+        "15": 0.27854829449416024,
+        "16": 0.2971432632000523,
+        "17": 0.28508762888700245,
+        "18": 0.37844206897263366,
+        "19": 0.5117563781129089,
+        "2": 0.26159606709640937,
+        "20": 0.5285465091435386,
+        "21": 0.29822488871414504,
+        "22": 0.25242228551290335,
+        "23": 0.2515049369912631,
+        "24": 0.30081215959613467,
+        "3": 0.2497729179646559,
+        "4": 0.3112737922833903,
+        "5": 0.24003378068854922,
+        "6": 0.21421645446870335,
+        "7": 0.22926617254929169,
+        "8": 0.2532765393806837,
+        "9": 0.2883392156666581
+      },
+      "content": "What does 'burnt' refer to in different contexts?",
+      "memories": {
+        "CLIP_19": [
+          "This person walks towards the counter with a plate of food.",
+          "<character_4> asks, 'What got burned?'",
+          "The person in the striped sweater replies, 'Oh, no, my eggs. Oh.'",
+          "<character_4> stands by the sink, looking out the window and holding a smartphone.",
+          "A frying pan with an egg sits on the stovetop.",
+          "Another person enters the kitchen, wearing a black and white striped sweater and light blue jeans.",
+          "<character_4> says, 'Oh, no, my eggs. Oh.'",
+          "<character_4> moves closer to the stovetop.",
+          "The person in the striped sweater opens a cabinet near the refrigerator.",
+          "The video begins in a kitchen with light wood cabinets and stainless steel appliances.",
+          "Large windows offer a view of other high-rise buildings and a body of water.",
+          "The person in the striped sweater takes something out of the refrigerator.",
+          "The person in the striped sweater closes the refrigerator door.",
+          "<character_4> is wearing a dark green, knit sweater and light beige pants."
+        ],
+        "CLIP_20": [
+          "<character_0> asks <character_0> if they are making charcoal grilled eggs.",
+          "<character_0> replies that it is burned.",
+          "<character_0> tells <character_0> to throw it away and make a new one.",
+          "<character_0> checks the stove and says it is off already.",
+          "<character_0> flips something in a pan on the stove.",
+          "<character_0> says they don't know what happened.",
+          "<character_0> says it is troublesome.",
+          "<character_0> asks <character_0> for help with the stove.",
+          "<character_0> wears a black and white striped sweater and light blue jeans.",
+          "<character_0> stands by the stove, while <character_0> begins by the shelves.",
+          "<character_0> and <character_0> are in a kitchen with light wood cabinets and stainless steel appliances.",
+          "<character_0> wears a dark green sweater and cream-colored pants.",
+          "<character_0> takes a photo of the food with their phone.",
+          "<character_0> continues to look at their phone.",
+          "<character_0> agrees and starts to clean up.",
+          "<character_0> offers to help."
+        ]
+      },
+      "model_output": "<think>\nOkay, let's see. The user asked \"What is burnt?\" and the searched knowledge is empty. So there's no information provided here. The question is pretty vague. \"Burnt\" could refer to something that's burned, like an object, a place, or maybe even a character in a story. But without any context or additional details, it's impossible to know what exactly is being referred to.\n\nThe instructions say that if the knowledge isn't sufficient, I should output [Search] and a query. Since there's no knowledge here, I need to generate a search query that can find more information. The previous search was empty, so the new query should be different. Maybe something like \"What is the meaning of burnt in the context of...\" but that's too broad. Alternatively, maybe ask for examples of things that can be burnt. Wait, the user might be referring to a specific scenario, like in a book or a movie. But without knowing that, it's hard. The safest bet is to search for a general explanation of what \"burnt\" refers to. So the query could be \"What does 'burnt' refer to in different contexts?\" or maybe \"Examples of things that are burnt.\" Let me go with the first one.\n</think>\n\nAction: [Search]\nContent: What does 'burnt' refer to in different contexts?",
+      "parsed": true,
+      "retrieval_seconds": 0.9729,
+      "round": 1,
+      "router": {
+        "action": "episodic",
+        "empty": false,
+        "entity_seeds": [],
+        "feature_version": 1,
+        "memory_tokens": 484,
+        "mode": "fixed",
+        "oversized_node_ids": [],
+        "returned_node_count": 30,
+        "returned_node_ids": [
+          477,
+          478,
+          479,
+          450,
+          451,
+          452,
+          484,
+          485,
+          486,
+          482,
+          483,
+          475,
+          476,
+          447,
+          448,
+          449,
+          453,
+          454,
+          455,
+          473,
+          474,
+          444,
+          445,
+          487,
+          488,
+          456,
+          457,
+          480,
+          481,
+          446
+        ],
+        "selected_clips": [
+          20,
+          19
+        ],
+        "token_budget": 4096
+      },
+      "search_mode": "router",
+      "threshold": 0.45
+    },
+    {
+      "action": "Answer",
+      "before_clip": 24,
+      "clip_scores": {},
+      "content": "The eggs are burnt.",
+      "memories": {},
+      "model_output": "<think>\nOkay, let's see. The user asked \"What is burnt?\" and there's some knowledge provided from CLIP_19 and CLIP_20.\n\nLooking at CLIP_19, there's a part where <character_4> asks, \"What got burned?\" and the person in the striped sweater replies, \"Oh, no, my eggs. Oh.\" So that directly mentions eggs being burned. Also, in CLIP_20, there's a mention of \"charcoal grilled eggs\" and someone says it's burned. So combining these two clips, it seems like the eggs are what got burnt. The answer should be \"eggs.\" The characters are referred by IDs, but the answer should use the name. However, since the knowledge doesn't provide the names of the characters, but the answer is clear from the dialogue, I can directly answer \"eggs\" without needing to map the character IDs. The user's question is answered by the content in the clips. So the action should be Answer with content \"eggs.\"\n</think>\n\nAction: [Answer]\nContent: The eggs are burnt.",
+      "parsed": true,
+      "retrieval_seconds": 0.0,
+      "round": 2
+    }
+  ],
+  "seed": 42
+}
